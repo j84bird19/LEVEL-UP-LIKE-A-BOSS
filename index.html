@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nick's Level Up</title>
+<style>
+:root{
+  --bg:#090b12; --panel:#111827; --panel2:#172033; --text:#eef3ff; --muted:#9aa7bd;
+  --gold:#ffd369; --green:#58f29a; --red:#ff6b7a; --blue:#63b3ff; --purple:#b084ff;
+  --line:rgba(255,255,255,.11);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text); background:
+  radial-gradient(circle at top left, rgba(99,179,255,.18), transparent 35%),
+  radial-gradient(circle at top right, rgba(255,211,105,.16), transparent 30%),
+  linear-gradient(180deg,#070810,#0b1020 55%,#080a12);
+}
+.app{max-width:560px;margin:auto;padding:16px 14px 90px}
+.hero{
+  border:1px solid var(--line); background:linear-gradient(145deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
+  border-radius:24px; padding:18px; box-shadow:0 20px 70px rgba(0,0,0,.35); position:relative; overflow:hidden;
+}
+.hero:before{content:"";position:absolute;inset:-60px;background:radial-gradient(circle,rgba(255,211,105,.18),transparent 45%);animation:pulse 4s infinite}
+@keyframes pulse{50%{transform:scale(1.15);opacity:.65}}
+.hero>*{position:relative}
+.topline{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.badge{font-size:12px;color:#10131c;background:var(--gold);padding:6px 10px;border-radius:999px;font-weight:800}
+h1{font-size:27px;margin:8px 0 2px;letter-spacing:.3px}
+.sub{color:var(--muted);font-size:14px}
+.level{font-size:15px;margin-top:12px;color:var(--gold);font-weight:800}
+.money{font-size:34px;font-weight:900;margin:4px 0}
+.bar{height:16px;background:#05070d;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.fill{height:100%;width:0%;background:linear-gradient(90deg,var(--green),var(--gold));transition:.45s}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.stat{border:1px solid var(--line);background:rgba(0,0,0,.2);border-radius:16px;padding:12px}
+.stat b{display:block;font-size:20px}
+.stat span{color:var(--muted);font-size:12px}
+.card{border:1px solid var(--line);background:rgba(17,24,39,.86);border-radius:22px;padding:15px;margin-top:14px}
+.card h2{font-size:18px;margin:0 0 10px}
+.row{display:flex;gap:9px;align-items:center;margin:8px 0}
+input,button,select{
+  width:100%; border:1px solid var(--line); border-radius:14px; padding:13px; font-size:16px;
+  background:#080b13; color:var(--text);
+}
+button{
+  cursor:pointer; font-weight:850; background:linear-gradient(135deg,#1c75ff,#8c5cff); border:0;
+  box-shadow:0 10px 24px rgba(69,98,255,.24);
+}
+button.secondary{background:#202a3d;box-shadow:none}
+button.gold{background:linear-gradient(135deg,#ffd369,#ff9f43);color:#121212}
+button.danger{background:#4a1720}
+.task{
+  display:flex;align-items:center;gap:10px;border:1px solid var(--line);padding:10px;border-radius:14px;margin:8px 0;background:rgba(255,255,255,.035)
+}
+.task input{width:22px;height:22px;accent-color:#58f29a}
+.locked{opacity:.55}
+.envelopes{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.env{aspect-ratio:1;border:1px solid var(--line);border-radius:14px;display:grid;place-items:center;background:#0a0e18;font-size:12px;font-weight:900}
+.env.done{background:linear-gradient(135deg,rgba(88,242,154,.35),rgba(255,211,105,.24));border-color:rgba(88,242,154,.7)}
+.env.active{outline:2px solid var(--gold)}
+.loot{border:1px dashed rgba(255,211,105,.55);padding:12px;border-radius:16px;color:var(--gold);background:rgba(255,211,105,.07)}
+.toast{
+  position:fixed;left:14px;right:14px;bottom:16px;max-width:540px;margin:auto;padding:14px 16px;
+  background:#101827;border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.45);
+  transform:translateY(130%);transition:.35s;z-index:5;font-weight:800
+}
+.toast.show{transform:translateY(0)}
+.particle{position:fixed;pointer-events:none;font-size:22px;animation:fly 900ms ease-out forwards;z-index:10}
+@keyframes fly{to{transform:translateY(-90px) scale(1.5);opacity:0}}
+.small{font-size:12px;color:var(--muted);line-height:1.35}
+.hidden{display:none}
+footer{position:fixed;bottom:0;left:0;right:0;background:rgba(7,8,16,.85);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:10px}
+footer .inner{max-width:560px;margin:auto;display:flex;gap:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="hero">
+    <div class="topline">
+      <div class="badge">NICK MODE</div>
+      <div class="small" id="today"></div>
+    </div>
+    <h1>Yard Boss Level-Up</h1>
+    <div class="sub">Save money. Finish tasks. Unlock levels. Earn mystery loot.</div>
+    <div class="level" id="levelName"></div>
+    <div class="money" id="savedText"></div>
+    <div class="bar"><div class="fill" id="moneyFill"></div></div>
+    <div class="grid">
+      <div class="stat"><b id="xpText">0 XP</b><span>Current level XP</span></div>
+      <div class="stat"><b id="coinsText">0</b><span>Boss Coins</span></div>
+      <div class="stat"><b id="streakText">0</b><span>Day streak</span></div>
+      <div class="stat"><b id="funText">$0</b><span>Fun/Gamble wallet</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>💵 Add Saved Money</h2>
+    <div class="row">
+      <input id="moneyInput" type="number" min="0" step="1" placeholder="Amount saved today"/>
+      <button class="gold" onclick="addMoney()">Add</button>
+    </div>
+    <p class="small">Money auto-fills the active envelope. Extra over the target rolls forward only after the level unlocks.</p>
+  </section>
+
+  <section class="card">
+    <h2>📋 Daily Tasks</h2>
+    <div id="tasks"></div>
+    <button onclick="completeDaily()">Claim Daily XP</button>
+    <p class="small">Daily XP counts toward level requirements. Bonus XP beyond the requirement can unlock surprise rewards.</p>
+  </section>
+
+  <section class="card">
+    <h2>✉️ Envelopes / Levels</h2>
+    <div class="envelopes" id="envelopes"></div>
+  </section>
+
+  <section class="card">
+    <h2>🎁 Mystery Reward</h2>
+    <div class="loot" id="lootBox">🔒 Earn bonus XP beyond the level requirement to reveal loot.</div>
+    <div id="lootActions" class="row hidden">
+      <button onclick="useLoot()">Use Reward</button>
+      <button class="secondary" onclick="rollLoot()">Roll Forward</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>🏆 Achievements</h2>
+    <div id="achievements"></div>
+  </section>
+</div>
+
+<footer>
+  <div class="inner">
+    <button class="secondary" onclick="save()">Save</button>
+    <button class="danger" onclick="resetApp()">Reset</button>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = "nick-yard-boss-v1";
+
+const levels = [
+  {name:"Level 1: Warm-Up", target:100, xpReq:60, coins:10},
+  {name:"Level 2: Showing Up", target:200, xpReq:85, coins:15},
+  {name:"Level 3: Grinder", target:300, xpReq:115, coins:20},
+  {name:"Level 4: Builder", target:400, xpReq:150, coins:25},
+  {name:"Level 5: Momentum", target:500, xpReq:195, coins:30},
+  {name:"Level 6: Locked In", target:700, xpReq:250, coins:40},
+  {name:"Level 7: Heavy Hitter", target:900, xpReq:320, coins:50},
+  {name:"Level 8: Boss Mode", target:1200, xpReq:410, coins:65},
+  {name:"Level 9: No Excuses", target:1600, xpReq:520, coins:80},
+  {name:"Level 10: Yard Boss", target:2000, xpReq:650, coins:100}
+];
+
+const dailyTasks = [
+  {id:"work", text:"Completed work / money-making action", xp:25, stat:"Grind"},
+  {id:"save", text:"Saved money today", xp:25, stat:"Discipline"},
+  {id:"daily", text:"Completed daily tasks", xp:20, stat:"Consistency"}
+];
+
+const hiddenLoot = [
+  {id:"fun20", label:"$20 Fun/Gamble Money", value:20, type:"fun"},
+  {id:"roll20", label:"$20 Roll-Forward Boost", value:20, type:"roll"},
+  {id:"coins", label:"+50 Boss Coins", value:50, type:"coins"},
+  {id:"xp", label:"+40 Bonus XP", value:40, type:"xp"},
+  {id:"shield", label:"Streak Shield", value:1, type:"shield"}
+];
+
+let state = {
+  levelIndex:0, totalSaved:0, envelopeSaved:0, xp:0, coins:0, funMoney:0, streak:0,
+  lastDaily:null, completedTasks:{}, achievements:[], loot:null, lootRevealed:false, lootClaimed:false,
+  stats:{Grind:0, Discipline:0, Consistency:0}
+};
+
+function load(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw) state = {...state, ...JSON.parse(raw)};
+  render();
+}
+
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  toast("Saved ✅");
+}
+
+function level(){ return levels[Math.min(state.levelIndex, levels.length-1)]; }
+
+function addMoney(){
+  const amount = Math.floor(Number(document.getElementById("moneyInput").value || 0));
+  if(amount <= 0) return toast("Add a real amount first.");
+  state.totalSaved += amount;
+  state.envelopeSaved += amount;
+  state.xp += Math.min(75, amount); // money gives XP, capped so it doesn't overpower tasks
+  state.stats.Discipline += amount;
+  document.getElementById("moneyInput").value = "";
+  pop("💵");
+  checkAchievements();
+  checkBonusLoot();
+  checkLevelUnlock();
+  saveSilent(); render();
+}
+
+function completeDaily(){
+  const today = new Date().toDateString();
+  if(state.lastDaily === today) return toast("Daily XP already claimed today.");
+  const allChecked = dailyTasks.every(t => state.completedTasks[t.id]);
+  if(!allChecked) return toast("Finish all daily tasks first.");
+  let gained = 0;
+  dailyTasks.forEach(t => { gained += t.xp; state.stats[t.stat] += t.xp; });
+  state.xp += gained;
+  state.coins += 5;
+  state.streak += 1;
+  state.lastDaily = today;
+  state.completedTasks = {};
+  toast(`Daily complete: +${gained} XP, +5 coins 🔥`);
+  pop("⚡");
+  checkAchievements();
+  checkBonusLoot();
+  checkLevelUnlock();
+  saveSilent(); render();
+}
+
+function checkBonusLoot(){
+  const l = level();
+  if(state.xp > l.xpReq && !state.lootRevealed && !state.lootClaimed){
+    const pick = hiddenLoot[Math.floor(Math.random()*hiddenLoot.length)];
+    state.loot = pick;
+    state.lootRevealed = true;
+    toast("🎁 Bonus XP mystery reward unlocked!");
+    pop("🎁");
+  }
+}
+
+function checkLevelUnlock(){
+  const l = level();
+  const moneyMet = state.envelopeSaved >= l.target;
+  const xpMet = state.xp >= l.xpReq;
+  if(moneyMet && xpMet && state.levelIndex < levels.length-1){
+    const overflow = state.envelopeSaved - l.target;
+    state.coins += l.coins;
+    state.levelIndex += 1;
+    state.envelopeSaved = Math.max(0, overflow);
+    state.xp = 0;
+    state.loot = null;
+    state.lootRevealed = false;
+    state.lootClaimed = false;
+    toast(`LEVEL UP! ${level().name} unlocked 🏆`);
+    for(let i=0;i<12;i++) setTimeout(()=>pop(["🔥","⭐","💵","🎮"][i%4]), i*60);
+  }
+}
+
+function useLoot(){
+  if(!state.lootRevealed || !state.loot || state.lootClaimed) return;
+  const loot = state.loot;
+  if(loot.type === "fun") state.funMoney += loot.value;
+  if(loot.type === "roll") state.envelopeSaved += loot.value, state.totalSaved += loot.value;
+  if(loot.type === "coins") state.coins += loot.value;
+  if(loot.type === "xp") state.xp += loot.value;
+  if(loot.type === "shield") state.coins += 25;
+  state.lootClaimed = true;
+  toast(`Reward used: ${loot.label}`);
+  checkLevelUnlock(); saveSilent(); render();
+}
+
+function rollLoot(){
+  if(!state.lootRevealed || !state.loot || state.lootClaimed) return;
+  state.envelopeSaved += 20;
+  state.totalSaved += 20;
+  state.xp += 50;
+  state.lootClaimed = true;
+  toast("Rolled reward forward: +$20 and +50 XP 🚀");
+  checkLevelUnlock(); saveSilent(); render();
+}
+
+function checkAchievements(){
+  const add = (id,label) => { if(!state.achievements.includes(id)){ state.achievements.push(id); toast(`Achievement unlocked: ${label}`); } };
+  if(state.totalSaved >= 100) add("first100","First $100");
+  if(state.totalSaved >= 500) add("cushion500","$500 Cushion");
+  if(state.totalSaved >= 1000) add("proof1000","$1,000 Proof");
+  if(state.streak >= 7) add("streak7","7-Day Streak");
+}
+
+function render(){
+  const l = level();
+  document.getElementById("today").textContent = new Date().toLocaleDateString();
+  document.getElementById("levelName").textContent = l.name;
+  document.getElementById("savedText").textContent = `$${state.envelopeSaved} / $${l.target}`;
+  document.getElementById("moneyFill").style.width = `${Math.min(100,(state.envelopeSaved/l.target)*100)}%`;
+  document.getElementById("xpText").textContent = `${state.xp} / ${l.xpReq} XP`;
+  document.getElementById("coinsText").textContent = state.coins;
+  document.getElementById("streakText").textContent = state.streak;
+  document.getElementById("funText").textContent = `$${state.funMoney}`;
+
+  document.getElementById("tasks").innerHTML = dailyTasks.map(t => `
+    <label class="task">
+      <input type="checkbox" ${state.completedTasks[t.id] ? "checked":""}
+       onchange="state.completedTasks['${t.id}']=this.checked; saveSilent(); render();">
+      <span>${t.text} <small class="small">+${t.xp} XP / ${t.stat}</small></span>
+    </label>`).join("");
+
+  document.getElementById("envelopes").innerHTML = levels.map((lv,i)=>{
+    const cls = i < state.levelIndex ? "done" : i === state.levelIndex ? "active" : "locked";
+    return `<div class="env ${cls}">${i+1}<br>$${lv.target}</div>`;
+  }).join("");
+
+  const lootBox = document.getElementById("lootBox");
+  const lootActions = document.getElementById("lootActions");
+  if(state.lootClaimed) {
+    lootBox.textContent = "✅ Reward claimed. Earn bonus XP on the next level for another mystery reward.";
+    lootActions.classList.add("hidden");
+  } else if(state.lootRevealed && state.loot){
+    lootBox.textContent = `🎁 ${state.loot.label} unlocked!`;
+    lootActions.classList.remove("hidden");
+  } else {
+    lootBox.textContent = "🔒 Earn bonus XP beyond the level requirement to reveal loot.";
+    lootActions.classList.add("hidden");
+  }
+
+  const names = {
+    first100:"First $100 saved",
+    cushion500:"$500 cushion",
+    proof1000:"$1,000 proof",
+    streak7:"7-day streak"
+  };
+  document.getElementById("achievements").innerHTML = state.achievements.length
+    ? state.achievements.map(a=>`<div class="task">🏆 ${names[a] || a}</div>`).join("")
+    : `<p class="small">No achievements yet. Start stacking wins.</p>`;
+}
+
+function saveSilent(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(window.toastTimer);
+  window.toastTimer = setTimeout(()=>t.classList.remove("show"),2600);
+}
+
+function pop(symbol){
+  const p = document.createElement("div");
+  p.className = "particle";
+  p.textContent = symbol;
+  p.style.left = Math.random()*90 + "vw";
+  p.style.top = (65 + Math.random()*20) + "vh";
+  document.body.appendChild(p);
+  setTimeout(()=>p.remove(),950);
+}
+
+function resetApp(){
+  if(!confirm("Reset Nick's progress?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+load();
+</script>
+</body>
+</html>
